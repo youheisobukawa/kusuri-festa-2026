@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta charset="utf-8">
+<title>薬を探せ 担当アプリ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@700&display=swap">
+<style>
+/* 片手で持つ1カラムの道具。上に進行バー、下に大きなボタン */
+:root {
+  --bg: #f1f3f0; --surface: #ffffff; --fg: #1c2430; --muted: #5a6470; --line: #d3d8d1;
+  --sit: #f4c430; --sit-ink: #222222; --blue: #e3ebf6; --blue-fg: #1f3f6e; --red: #c4351f;
+  --press: #e9ece6;
+  --font: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --display: "Zen Maru Gothic", "BIZ UDPGothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #14181d; --surface: #1d2229; --fg: #e8ebee; --muted: #a2aab4; --line: #303842; --blue: #22324a; --blue-fg: #cddcf3; --red: #ff7d61; --press: #262c34; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #14181d; --surface: #1d2229; --fg: #e8ebee; --muted: #a2aab4; --line: #303842; --blue: #22324a; --blue-fg: #cddcf3; --red: #ff7d61; --press: #262c34; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.6; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 40px; display: grid; gap: 14px; }
+header.bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+header.bar h1 { font-family: var(--display); font-size: 18px; margin: 0; margin-right: auto; }
+.lane { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+select { font: inherit; font-size: 16px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.sync.warn { color: var(--red); font-weight: 700; }
+.count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+nav.tabs button { font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+nav.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 700; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.steps span { height: 6px; border-radius: 3px; background: var(--line); }
+.steps span.on { background: var(--sit); }
+h2 { font-family: var(--display); font-size: 22px; margin: 4px 0 0; text-wrap: balance; }
+.sub { font-size: 14px; color: var(--muted); margin: 0; }
+.picked { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; }
+.picked span { background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; }
+.say { display: block; background: var(--blue); color: var(--blue-fg); border-radius: 14px 14px 14px 4px; padding: 8px 14px; font-weight: 700; font-size: 17px; }
+.says { display: grid; gap: 6px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+details .says { margin-top: 8px; }
+.grid { display: grid; gap: 10px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.btn { font: inherit; text-align: left; border: 2px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 12px; padding: 12px 14px; min-height: 64px; cursor: pointer; display: grid; gap: 2px; align-content: center; }
+.btn:active { background: var(--press); }
+.btn:focus-visible, nav.tabs button:focus-visible, .act:focus-visible { outline: 3px solid var(--blue-fg); outline-offset: 2px; }
+.btn b { font-size: 26px; font-family: var(--display); line-height: 1.1; }
+.btn small { font-size: 13px; color: var(--muted); }
+.btn.goal b { font-size: 20px; }
+.btn.wide { grid-column: 1 / -1; }
+.btn.sel, .opt.sel { border-color: var(--blue-fg); background: var(--blue); color: var(--blue-fg); }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { font: inherit; font-size: 15px; border: 2px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 8px 12px; min-height: 44px; cursor: pointer; }
+.opt.norec { justify-self: start; font-size: 14px; border-style: dashed; }
+.person { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.person h3, .result h3 { margin: 0; font-size: 16px; font-family: var(--display); }
+.steps.five { grid-template-columns: repeat(5, 1fr); }
+.act:disabled { opacity: .4; cursor: not-allowed; }
+.btn.timeout { border-style: dashed; }
+.timer { display: grid; place-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.ring { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--sit) calc(var(--p, 1) * 360deg), var(--line) 0); }
+.ring span { width: 120px; height: 120px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-family: var(--display); font-size: 64px; font-variant-numeric: tabular-nums; line-height: 1; }
+.ring.end span { color: var(--red); font-size: 34px; }
+.timer .tline { font-weight: 700; min-height: 1.6em; text-align: center; }
+.act { font: inherit; font-weight: 700; font-size: 17px; border: 0; border-radius: 12px; padding: 14px; background: var(--fg); color: var(--bg); cursor: pointer; width: 100%; }
+.act.ghost { background: transparent; color: var(--fg); border: 2px solid var(--line); }
+.row { display: flex; gap: 10px; }
+.row > * { flex: 1; }
+.result { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.chip { justify-self: start; font-family: var(--display); font-size: 28px; padding: 2px 18px; border-radius: 10px; }
+.chip.great { background: var(--sit); color: var(--sit-ink); }
+.chip.ok { background: var(--blue); color: var(--blue-fg); }
+.chip.close { border: 2px solid var(--muted); color: var(--muted); }
+.chip.alt { border: 2px solid var(--fg); color: var(--fg); }
+.chip.cond { background: var(--blue); color: var(--blue-fg); border: 2px dashed var(--blue-fg); font-size: 22px; }
+.read { font-size: 21px; font-weight: 700; line-height: 1.55; }
+.read .shout { display: block; font-family: var(--display); font-size: 26px; }
+.pre { border-left: 4px solid var(--red); padding-left: 10px; font-weight: 700; font-size: 18px; }
+.points { margin: 0; padding-left: 1.4em; font-size: 18px; font-weight: 700; line-height: 1.55; }
+.points li + li { margin-top: 4px; }
+.tip { font-size: 15px; color: var(--muted); }
+.tip b { color: var(--fg); }
+.label { font-size: 12px; color: var(--muted); letter-spacing: .06em; font-weight: 700; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; background: var(--surface); }
+th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; font-variant-numeric: tabular-nums; }
+td.n { text-align: right; }
+.tbl { overflow-x: auto; }
+.big { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.big div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: grid; }
+.big b { font-size: 26px; font-family: var(--display); font-variant-numeric: tabular-nums; }
+.big small { font-size: 12px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+textarea { width: 100%; min-height: 110px; font: inherit; font-size: 13px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 8px; }
+.help dt { font-weight: 700; margin-top: 10px; }
+.help dd { margin: 2px 0 0; }
+.danger { color: var(--red); border-color: var(--red); }
+@media (max-width: 380px) { .grid.three { grid-template-columns: minmax(0, 1fr); } .big { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="app" id="app">
+  <header class="bar">
+    <h1>命をつなぐ薬を探せ</h1>
+    <label class="lane" for="lane">レーン <select id="lane"><option>1</option><option>2</option><option>3</option><option>4</option><option>練習</option></select></label>
+    <span class="count" id="count">0組</span><span class="count sync" id="sync"></span>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button id="tab-run" role="tab" aria-selected="true" data-tab="run">進行</button>
+    <button id="tab-tally" role="tab" aria-selected="false" data-tab="tally">集計</button>
+    <button id="tab-help" role="tab" aria-selected="false" data-tab="help">困ったとき</button>
+  </nav>
+  <main id="view"></main>
+</div>
+
+<script>
+const D = {"cards": [{"id": "A", "role": "ぜんそくの小学生", "cat": "持病が悪化した"}, {"id": "B", "role": "高血圧のおじいちゃん", "cat": "いつもの薬が必要"}, {"id": "C", "role": "子どもの熱（ママ）", "cat": "新しく具合が悪くなった"}, {"id": "D", "role": "頭痛のお姉さん", "cat": "新しく具合が悪くなった"}, {"id": "E", "role": "糖尿病の会社員", "cat": "持病が悪化した"}, {"id": "F", "role": "血液サラサラの薬のおばあちゃん", "cat": "いつもの薬が必要"}], "items": [{"no": "①", "name": "お薬手帳（防災型）"}, {"no": "②", "name": "スマートフォン"}, {"no": "③", "name": "空の薬のシート・薬の袋"}, {"no": "④", "name": "運転免許証"}, {"no": "⑤", "name": "マイナンバーカード"}], "goals": [{"key": "かかりつけ薬局", "label": "いつもの薬がある。でも、災害のあとしばらくは開かない。開くのは1週間くらいたってから"}, {"key": "救護所", "label": "近くで診てもらえて、熱や痛みの薬もある。でも、開くかどうかは災害の大きさしだい"}, {"key": "病院前救護所", "label": "開いていることが多く、診てもらえる。でも、とても混む。いつもの薬はすぐにはもらえないことも"}], "table": {"A": {"①": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "悪化", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "②": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "悪化", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "③": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "悪化", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "④": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "病院前救護所": {"cat": "悪化", "res": "正解", "kind": "ok", "shout": "正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}, "⑤": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "病院前救護所": {"cat": "悪化", "res": "条件付き正解", "kind": "cond", "shout": "条件付きで正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}}, "時間切れ": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "病院前救護所": {"cat": "悪化", "res": "正解", "kind": "ok", "shout": "正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}}, "B": {"①": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "いつもの薬", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "②": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "いつもの薬", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "③": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "いつもの薬", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "④": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "病院前救護所": {"cat": "いつもの薬", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}, "⑤": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "病院前救護所": {"cat": "いつもの薬", "res": "条件付き正解", "kind": "cond", "shout": "条件付きで正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}}, "時間切れ": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "病院前救護所": {"cat": "いつもの薬", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}}, "C": {"①": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "症状", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "②": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "症状", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "③": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "症状", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "④": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "病院前救護所": {"cat": "症状", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}, "⑤": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "病院前救護所": {"cat": "症状", "res": "条件付き正解", "kind": "cond", "shout": "条件付きで正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}}, "時間切れ": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "病院前救護所": {"cat": "症状", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}}, "D": {"①": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "症状", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "②": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "症状", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "③": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "症状", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "④": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "病院前救護所": {"cat": "症状", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}, "⑤": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "病院前救護所": {"cat": "症状", "res": "条件付き正解", "kind": "cond", "shout": "条件付きで正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}}, "時間切れ": {"かかりつけ薬局": {"cat": "症状", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。熱や痛みは、お医者さんに診てもらいましょう。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "救護所": {"cat": "症状", "res": "開いていればOK", "kind": "alt", "shout": "開いていればOK！", "why": "近くの救護所が開いていれば、熱や痛みの薬があります。でも、開くかどうかは分かりません。開いていなければ、病院前救護所へ。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "病院前救護所": {"cat": "症状", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多く、お医者さんに診てもらえます。混んでいるので、待つ覚悟で。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}}, "E": {"①": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "悪化", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "②": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "悪化", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "③": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "悪化", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "④": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "病院前救護所": {"cat": "悪化", "res": "正解", "kind": "ok", "shout": "正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}, "⑤": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "病院前救護所": {"cat": "悪化", "res": "条件付き正解", "kind": "cond", "shout": "条件付きで正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}}, "時間切れ": {"かかりつけ薬局": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。具合が悪いときは、薬だけでは足りません。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "救護所": {"cat": "悪化", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。具合が悪いなら、病院前救護所へ。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "病院前救護所": {"cat": "悪化", "res": "正解", "kind": "ok", "shout": "正解！", "why": "具合が悪くなったら、病院前救護所へ。開いていることが多く、お医者さんに診てもらえます。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}}, "F": {"①": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "いつもの薬", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "②": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "いつもの薬", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "③": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}, "病院前救護所": {"cat": "いつもの薬", "res": "大成功", "kind": "great", "shout": "大正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "薬の記録があるから、混んでいても、あなたの薬がすぐ分かります。いつもの薬がもらえる見込みが高まります。"}}, "④": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": ""}, "病院前救護所": {"cat": "いつもの薬", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "免許証で名前は分かるけど、飲んでいる薬は分からないんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}, "⑤": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}, "病院前救護所": {"cat": "いつもの薬", "res": "条件付き正解", "kind": "cond", "shout": "条件付きで正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "", "extra": "マイナ保険証なら薬の記録を見られることも。でも停電や通信が止まると見られないので、紙の手帳もあると安心です。"}}, "時間切れ": {"かかりつけ薬局": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "災害の2日目は、薬局はほとんど開いていません。かかりつけ薬局に行くのは、1週間くらいたってから。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "救護所": {"cat": "いつもの薬", "res": "惜しい", "kind": "close", "shout": "惜しい！", "why": "救護所は、開くかどうか分かりません。開いていても、いつもの薬はないかもしれません。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": ""}, "病院前救護所": {"cat": "いつもの薬", "res": "正解", "kind": "ok", "shout": "正解！", "why": "病院前救護所は、開いていることが多いです。でもとても混んでいて、いつもの薬はすぐにはもらえないこともあります。", "pre": "時間切れ！あわてると何も持たずに逃げてしまうんです。", "extra": "薬の記録がないと、いつもの薬を探すのに時間がかかります。"}}}}, "closing": "災害の2日目、薬局はほとんど開いていません。救護所も開くか分かりません。頼りになるのは病院前救護所ですが、とても混みます。だから、ふだんの備えが大事です。", "closingPoints": ["お薬手帳を持って逃げる", "いつもの薬は早めにもらって、できれば2週間分くらい持っておく", "かかりつけ薬局を1つに決める", "どこが開いているか、情報をしっかり集める"], "opening": ["ここは、大きな地震が起きてから2日目の浜松です。", "カードを1枚引いてね。きみは今から、カードの人になります。", "大変！困ったことが起きました。どうしますか？"], "timerLines": ["逃げる時間は10秒！1つだけ持っていけるよ。よーい、スタート！", "あと5秒！", "3、2、1…そこまで！"], "tips": {"A": "発作が出たら、薬だけでなく診察が必要。吸入薬は名前が長いので、写真があると便利", "B": "薬の名前を覚えていなくても、記録があれば大丈夫。ふだんから薬局を1つにまとめておくと、記録も1か所にそろう", "C": "子どもの熱は、診てもらうと安心。救護所が開いていれば、子ども用の熱冷ましもある", "D": "強い痛みは、診てもらってから薬を。救護所が開いていれば、痛み止めもある", "E": "具合が悪くなったら、薬だけでなく診察が必要。インスリンは救護所にないこともある", "F": "血液をサラサラにする薬は、切らすと危ない。早めにもらって、できれば2週間分くらい持っておく"}, "help": [["列が長い", "案内係か交代係に伝えて4レーン目を開ける。一言は省く"], ["家族で来た", "遊ぶのは2人まで。アプリで「2人」、カードは1人1枚"], ["親が答えを言う", "「お子さんに選んでもらいましょう」"], ["焦って泣きそう", "タイマーを止めて、ゆっくり選ばせる"], ["惜しいで落ち込む", "「今日まちがえたから、本番は大丈夫」"], ["薬局は開いていないの？", "多くは1週間くらいたってから開く。それまでは病院前救護所へ"], ["病院前救護所って？", "救護病院の前などに開く。浜松市の医療救護計画に一覧"], ["2週間分ももらえる？", "医師・薬剤師に相談を。まずは切れる前に早めにもらう"], ["薬の相談", "ここでは受けない。「お薬相談」コーナーへ"], ["マイナカードの質問", "保険証の登録があれば記録を見られることも。停電・通信断では見られない"], ["つらそうな人", "無理に続けない。参加賞を渡して終える"], ["フリップがない", "アプリの「最後に」にある4つを読み上げる"]], "results": ["大成功", "正解", "条件付き正解", "開いていればOK", "惜しい"], "sexes": ["男性", "女性", "答えない"], "ages": ["未就学児", "小学生", "中学・高校生", "20〜39歳", "40〜64歳", "65歳以上"], "gsizes": ["1", "2", "3", "4", "5以上"]};
+const LOG_KEY = "kusuri-game-log-v1", LANE_KEY = "kusuri-game-lane";
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let log = store.get(LOG_KEY, []);
+const newP = () => ({ sex: null, age: null, card: null, item: null, goal: null });
+const newState = (tab) => ({ tab: tab || "run", step: "who", gsize: null, n: 1, norec: false, P: [newP(), newP()], confirmReset: false });
+let S = newState();
+function saveRecord(rec) { log.push(rec); store.set(LOG_KEY, log); }
+let afterTally = null;
+let timer = { left: 10, running: false, done: false, id: null, end: 0 };
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const cardOf = (id) => D.cards.find((c) => c.id === id);
+
+// 判定（cards_common.judge と同じ）
+function judge(card, item, goal) { return D.table[card][item][goal]; }
+
+// 音（タップのあとでだけ鳴らせる）
+let ac = null;
+function beep(freq, ms) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = freq; o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(0.18, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + ms / 1000);
+    o.start(); o.stop(ac.currentTime + ms / 1000);
+  } catch (e) {}
+}
+let wake = null;
+async function keepAwake() { try { if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); } } catch (e) {} }
+
+function startTimer() {
+  keepAwake(); beep(880, 120);
+  timer = { left: 10, running: true, done: false, id: null, end: Date.now() + 10000, last: 10 };
+  timer.id = setInterval(() => {
+    const left = Math.max(0, Math.ceil((timer.end - Date.now()) / 1000));
+    if (left !== timer.last) {
+      timer.last = left;
+      if (left <= 5 && left > 0) beep(left <= 3 ? 990 : 760, 110);
+      if (left === 0) { beep(520, 600); try { navigator.vibrate && navigator.vibrate(300); } catch (e) {} }
+    }
+    timer.left = left;
+    if (left === 0) { clearInterval(timer.id); timer.running = false; timer.done = true; }
+    paintTimer();
+  }, 100);
+  paintTimer();
+}
+function stopTimer() { if (timer.id) clearInterval(timer.id); timer = { left: 10, running: false, done: false, id: null, end: 0 }; }
+function paintTimer() {
+  const ring = $("#ring"); if (!ring) return;
+  const p = timer.running ? Math.max(0, (timer.end - Date.now()) / 10000) : timer.done ? 0 : 1;
+  ring.style.setProperty("--p", p.toFixed(3));
+  ring.classList.toggle("end", timer.done);
+  $("#ring span").textContent = timer.done ? "そこまで" : timer.left;
+  const t = D.timerLines;
+  $("#tline").textContent = !timer.running && !timer.done ? t[0] : timer.done ? t[2] : timer.left <= 5 ? t[1] : "";
+  const b = $("#tbtn"); if (b) b.textContent = timer.running ? "タイマーを止める" : timer.done ? "もう一度10秒" : "10秒スタート";
+}
+
+function stepsBar(n) { return `<div class="steps five" aria-hidden="true">${[0,1,2,3,4].map((i) => `<span class="${i <= n ? "on" : ""}"></span>`).join("")}</div>`; }
+const act = () => S.P.slice(0, S.n);
+const who = (i) => { const p = S.P[i]; return `${i + 1}人目${p.sex || p.age ? `（${[p.sex, p.age].filter(Boolean).join("・")}）` : ""}`; };
+const pickedOf = (p) => {
+  const out = [];
+  if (p.card) { const c = cardOf(p.card); out.push(`${c.id} ${c.role}`); }
+  if (p.item) out.push(p.item === "時間切れ" ? "時間切れ" : `${p.item} ${D.items.find((i) => i.no === p.item).name}`);
+  if (p.goal) out.push(p.goal);
+  return out.length ? `<div class="picked">${out.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : "";
+};
+const opt = (attr, val, on, label) => `<button class="opt${on ? " sel" : ""}" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label || val)}</button>`;
+
+function viewWho() {
+  const ready = S.gsize && (S.norec || act().every((p) => p.sex && p.age));
+  const people = act().map((p, i) => `<section class="person"><h3>${i + 1}人目</h3>
+    <div class="label">性別</div><div class="opts">${D.sexes.map((v) => opt("data-sex", `${i}:${v}`, p.sex === v, v)).join("")}</div>
+    <div class="label">年齢</div><div class="opts">${D.ages.map((v) => opt("data-age", `${i}:${v}`, p.age === v, v)).join("")}</div></section>`).join("");
+  return `${stepsBar(0)}
+  <h2>参加する人</h2>
+  <p class="sub">選ぶのは、カードを引いて遊ぶ本人の性別と年齢です。</p>
+  <div class="label">グループの人数（付きそいも含む）</div>
+  <div class="opts">${D.gsizes.map((v) => opt("data-gsize", v, S.gsize === v, v === "5以上" ? "5人以上" : `${v}人`)).join("")}</div>
+  <div class="label">今回プレイする人数</div>
+  <div class="opts">${opt("data-n", "1", S.n === 1, "1人")}${S.gsize === "1" ? "" : opt("data-n", "2", S.n === 2, "2人（同時に）")}</div>
+  ${people}
+  <button class="opt norec${S.norec ? " sel" : ""}" data-norec="1" aria-pressed="${S.norec}">${S.norec ? "✓ " : ""}記録しない（申し出があった）</button>
+  <button class="act" id="go-card" ${ready ? "" : "disabled"}>カードへ進む</button>
+  ${ready ? "" : `<p class="note">グループの人数と、プレイする人の性別・年齢を選ぶと進めます。</p>`}`;
+}
+function viewCard() {
+  return `${stepsBar(1)}
+  <details open><summary>はじめの声かけ</summary><div class="says">${D.opening.map((l) => `<span class="say">${esc(l)}</span>`).join("")}</div></details>
+  <h2>引いたカードは？</h2>
+  ${act().map((p, i) => `<section class="person"><h3>${esc(who(i))}</h3><div class="grid two">${D.cards.map((c) => `<button class="btn${p.card === c.id ? " sel" : ""}" data-card="${i}:${c.id}"><b>${c.id}</b><small>${esc(c.role)}<br>${esc(c.cat)}</small></button>`).join("")}</div></section>`).join("")}
+  <button class="act ghost" data-back="who">← 参加する人に戻る</button>`;
+}
+function viewItem() {
+  return `${stepsBar(2)}
+  <div class="timer"><div class="ring" id="ring"><span>10</span></div><div class="tline" id="tline"></div>
+  <button class="act" id="tbtn">10秒スタート</button></div>
+  <h2>選んだアイテムは？</h2>
+  ${act().map((p, i) => `<section class="person"><h3>${esc(who(i))}</h3>${pickedOf(p)}<div class="grid two">${D.items.map((it) => `<button class="btn${p.item === it.no ? " sel" : ""}" data-item="${i}:${it.no}"><b>${it.no}</b><small>${esc(it.name)}</small></button>`).join("")}
+  <button class="btn wide timeout${p.item === "時間切れ" ? " sel" : ""}" data-item="${i}:時間切れ"><b style="font-size:20px">時間切れ</b><small>何も選べなかった（④と同じ判定）</small></button></div></section>`).join("")}
+  <button class="act ghost" data-back="card">← カードを選び直す</button>`;
+}
+function viewGoal() {
+  return `${stepsBar(3)}
+  <div class="says"><span class="say">カードと同じ顔のマグネットはこれ。</span><span class="say">この人は、どこへ行けばいいかな？貼ってみて！</span></div>
+  <h2>どこに貼った？</h2>
+  ${act().map((p, i) => `<section class="person"><h3>${esc(who(i))}</h3>${pickedOf(p)}<div class="grid three">${D.goals.map((g) => `<button class="btn goal${p.goal === g.key ? " sel" : ""}" data-goal="${i}:${g.key}"><b>${esc(g.key)}</b><small>${esc(g.label)}</small></button>`).join("")}</div></section>`).join("")}
+  <button class="act ghost" data-back="item">← アイテムを選び直す</button>`;
+}
+function viewResult() {
+  const blocks = act().map((p, i) => {
+    const r = judge(p.card, p.item, p.goal), tip = D.tips[p.card];
+    return `<div class="result"><h3>${esc(who(i))}</h3>${pickedOf(p)}
+    <span class="chip ${r.kind}">${esc(r.res)}</span>
+    ${r.pre ? `<div><div class="label">先にこう言う</div><div class="pre">${esc(r.pre)}</div></div>` : ""}
+    <div><div class="label">読み上げる</div><div class="read"><span class="shout">${esc(r.shout)}</span>${esc(r.why)}</div></div>
+    ${r.extra ? `<div class="tip"><b>持ち物の一言：</b>${esc(r.extra)}</div>` : ""}
+    ${tip ? `<div class="tip"><b>時間があれば：</b>${esc(tip)}</div>` : ""}</div>`;
+  }).join("");
+  return `${stepsBar(4)}${blocks}
+  <div class="result"><div class="label">最後に${S.n === 2 ? "（2人いっしょに）" : ""}</div><div class="read" style="font-size:18px">${esc(D.closing)}</div><div class="label">フリップを見せて</div><ol class="points">${D.closingPoints.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></div>
+  <button class="act" id="next">${S.norec ? "次の組へ（記録しない）" : "記録して次の組へ"}</button>
+  <button class="act ghost" data-back="goal">← 貼った場所を選び直す</button>
+  <p class="note">「惜しい」でも参加賞は全員に。出口の机へ案内してください。</p>`;
+}
+
+function tallyView() {
+  const n = log.length, groups = new Set(log.map((x) => x.gid || x.id)).size;
+  const ageRows = D.ages.map((a) => { const xs = log.filter((x) => x.age === a); const ok = xs.filter((x) => ["大成功", "正解", "条件付き正解"].includes(x.res)).length; return `<tr><th>${esc(a)}</th><td class="n">${xs.length}</td><td class="n">${ok}</td></tr>`; }).join("");
+  const by = (k, v) => log.filter((x) => x[k] === v).length;
+  const cardRows = D.cards.map((c) => `<tr><th>${c.id}</th>${D.goals.map((g) => `<td class="n">${log.filter((x) => x.card === c.id && x.goal === g.key).length}</td>`).join("")}</tr>`).join("");
+  const itemCells = [...D.items.map((i) => i.no), "時間切れ"].map((no) => `<td class="n">${by("item", no)}</td>`).join("");
+  const lanes = [1,2,3,4].map((l) => `${l}:${by("lane", String(l))}`).join("　");
+  const text = [`集計（${new Date().toLocaleString("ja-JP")}）`, `合計 ${groups}組・${n}人（${D.results.map((r) => r + by("res", r)).join("／")}）`, `レーン別 ${lanes}`,
+    ...D.cards.map((c) => `${c.id}: ` + D.goals.map((g) => `${g.key}${log.filter((x) => x.card === c.id && x.goal === g.key).length}`).join(" ")),
+    "アイテム: " + [...D.items.map((i) => i.no), "時間切れ"].map((no) => `${no}${by("item", no)}`).join(" ")].join("\n");
+  return `<div id="remote"></div><h2>この端末の集計</h2>
+  <p class="note">記録はこのスマホの中だけに残ります。終わったら下の文字をコピーして、集計係に送ってください。</p>
+  <div class="big"><div><b>${groups}組</b><small>${n}人</small></div><div><b>${by("res","大成功") + by("res","正解") + by("res","条件付き正解")}</b><small>正解のゴール</small></div><div><b>${by("res","開いていればOK")}</b><small>開いていればOK</small></div><div><b>${by("res","惜しい")}</b><small>惜しい</small></div></div>
+  <div class="label">カード × 貼った場所</div>
+  <div class="tbl"><table><tr><th></th>${D.goals.map((g) => `<th>${esc(g.key)}</th>`).join("")}</tr>${cardRows}</table></div>
+  <div class="label">年齢別（人数／正解のゴール）</div>
+  <div class="tbl"><table><tr><th></th><th>人数</th><th>正解のゴール</th></tr>${ageRows}</table></div>
+  <div class="label">選んだアイテム</div>
+  <div class="tbl"><table><tr>${[...D.items.map((i) => i.no), "時間切れ"].map((x) => `<th>${x}</th>`).join("")}</tr><tr>${itemCells}</tr></table></div>
+  <label class="label" for="out">送る用の文字</label>
+  <textarea id="out" readonly>${esc(text)}</textarea>
+  <div class="row"><button class="act" id="copy">コピー</button>
+  <button class="act ghost danger" id="reset">${S.confirmReset ? "本当に消す（もう一度押す）" : "記録を全部消す"}</button></div>
+  <p class="note" id="copymsg"></p>`;
+}
+function helpView() {
+  const rows = D.help;
+  return `<h2>困ったとき</h2><dl class="help">${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("")}</dl>`;
+}
+
+function render() {
+  document.querySelectorAll("nav.tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === S.tab)));
+  const groups = new Set(log.filter((x) => x.lane === $("#lane").value).map((x) => x.gid || x.id));
+  $("#count").textContent = `${groups.size}組（このレーン）`;
+  let h = "";
+  if (S.tab === "tally") h = tallyView();
+  else if (S.tab === "help") h = helpView();
+  else h = { who: viewWho, card: viewCard, item: viewItem, goal: viewGoal, result: viewResult }[S.step]();
+  $("#view").innerHTML = `<div class="grid">${h}</div>`;
+  if (S.tab === "run" && S.step === "item") paintTimer();
+  if (S.tab === "tally" && afterTally) afterTally();
+}
+const split = (v) => { const k = v.indexOf(":"); return [Number(v.slice(0, k)), v.slice(k + 1)]; };
+function advanceIf(field, next) { if (act().every((p) => p[field])) { S.step = next; stopTimer(); window.scrollTo(0, 0); } }
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if (!t || t.disabled) return;
+  if (t.dataset.tab) { S.tab = t.dataset.tab; S.confirmReset = false; render(); return; }
+  if (t.dataset.gsize) { S.gsize = t.dataset.gsize; if (S.gsize === "1") S.n = 1; render(); return; }
+  if (t.dataset.n) { S.n = Number(t.dataset.n); render(); return; }
+  if (t.dataset.sex) { const [i, v] = split(t.dataset.sex); S.P[i].sex = v; render(); return; }
+  if (t.dataset.age) { const [i, v] = split(t.dataset.age); S.P[i].age = v; render(); return; }
+  if (t.dataset.norec) { S.norec = !S.norec; render(); return; }
+  if (t.id === "go-card") { S.step = "card"; keepAwake(); render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.card) { const [i, v] = split(t.dataset.card); S.P[i].card = v; advanceIf("card", "item"); render(); return; }
+  if (t.id === "tbtn") { if (timer.running) { stopTimer(); paintTimer(); } else startTimer(); return; }
+  if (t.dataset.item) { const [i, v] = split(t.dataset.item); S.P[i].item = v; if (act().every((p) => p.item)) { stopTimer(); S.step = "goal"; window.scrollTo(0, 0); } render(); return; }
+  if (t.dataset.goal) { const [i, v] = split(t.dataset.goal); S.P[i].goal = v; advanceIf("goal", "result"); render(); return; }
+  if (t.dataset.back) {
+    const b = t.dataset.back; S.step = b; stopTimer();
+    act().forEach((p) => { if (b === "who" || b === "card") { p.card = null; p.item = null; p.goal = null; } if (b === "item") { p.item = null; p.goal = null; } if (b === "goal") p.goal = null; });
+    render(); return;
+  }
+  if (t.id === "next") {
+    if (!S.norec) {
+      const gid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      act().forEach((p, i) => {
+        const r = judge(p.card, p.item, p.goal);
+        saveRecord({ id: `${gid}-${i + 1}`, gid, t: Date.now(), lane: $("#lane").value, gsize: S.gsize, n: S.n, pno: i + 1, sex: p.sex, age: p.age, card: p.card, item: p.item, goal: p.goal, res: r.res });
+      });
+    }
+    S = newState(S.tab); render(); window.scrollTo(0, 0); return;
+  }
+  if (t.id === "copy") {
+    const ta = $("#out"), msg = $("#copymsg");
+    navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = "コピーしました"; }).catch(() => { ta.focus(); ta.select(); msg.textContent = "選択しました。長押しでコピーしてください"; });
+    return;
+  }
+  if (t.id === "reset") {
+    if (!S.confirmReset) { S.confirmReset = true; render(); return; }
+    log = []; store.set(LOG_KEY, log); S.confirmReset = false; render(); return;
+  }
+});
+$("#lane").value = String(store.get(LANE_KEY, "1"));
+$("#lane").addEventListener("change", () => { store.set(LANE_KEY, $("#lane").value); render(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.tab === "run") keepAwake(); });
+
+// 入口ページ版：GAS の /exec に送る。本文は text/plain なので事前確認（preflight）は起きない。Cookie は送らない
+const API_URL = "https://script.google.com/macros/s/AKfycbzBnNE7RsMzVo8dtMCXJt-I06RvwwsDn2hyYTu4caIaLlQb90hN-uc-ayaRKN8H61ud/exec";
+function api(name, arg) {
+  const req = name === "記録する"
+    ? fetch(API_URL, { method: "POST", body: JSON.stringify({ recs: arg }) })
+    : fetch(API_URL + "?api=sum");
+  return req.then((r) => { if (!r.ok) throw new Error("通信エラー " + r.status); return r.json(); })
+    .then((j) => { if (j.error) throw new Error(j.error); return j.data; });
+}
+
+// ── GAS 版：記録をスプレッドシートへ送る。届かなかった分はスマホに残して再送する ──
+const PENDING_KEY = "kusuri-game-pending-v1";
+let pending = store.get(PENDING_KEY, []).filter((p) => p.gid);  // 10/13 より前の形式（参加者の項目なし）は送らない
+let sending = false;
+function setSync(err) {
+  const el = document.getElementById("sync"); if (!el) return;
+  el.textContent = pending.length ? `未送信${pending.length}件${err ? "・再送します" : ""}` : "送信済み";
+  el.classList.toggle("warn", pending.length > 0);
+}
+function flush() {
+  if (!pending.length || sending) { setSync(); return; }
+  sending = true;
+  api("記録する", pending.slice())
+    .then((ids) => { sending = false; pending = pending.filter((p) => !ids.includes(p.id)); store.set(PENDING_KEY, pending); setSync(); })
+    .catch(() => { sending = false; setSync(true); });
+}
+saveRecord = function (rec) {
+  log.push(rec); store.set(LOG_KEY, log);
+  pending.push(rec); store.set(PENDING_KEY, pending);
+  flush();
+};
+setInterval(flush, 15000);
+afterTally = function () {
+  const box = document.getElementById("remote"); if (!box) return;
+  box.innerHTML = '<p class="note">全レーンの集計を読み込み中…</p>';
+  api("集計を見る")
+    .then((t) => {
+      const rows = D.cards.map((c) => `<tr><th>${c.id}</th>${D.goals.map((g) => `<td class="n">${(t.cardGoal[c.id] || {})[g.key] || 0}</td>`).join("")}</tr>`).join("");
+      const lanes = ["1", "2", "3", "4"].map((l) => `<div><b>${t.byLane[l] || 0}</b><small>レーン${l}</small></div>`).join("");
+      box.innerHTML = `<h2>全レーンの集計</h2>
+        <p class="note">スプレッドシートに集まった記録です（「練習」レーンは数えません。人数はプレイした人の数）。${esc(t.updated)}時点</p>
+        <div class="big"><div><b>${t.groups}組</b><small>${t.total}人</small></div><div><b>${(t.byRes["大成功"] || 0) + (t.byRes["正解"] || 0) + (t.byRes["条件付き正解"] || 0)}</b><small>正解のゴール</small></div><div><b>${t.byRes["開いていればOK"] || 0}</b><small>開いていればOK</small></div><div><b>${t.byRes["惜しい"] || 0}</b><small>惜しい</small></div></div>
+        <div class="big">${lanes}</div>
+        <div class="label">カード × 貼った場所（全レーン）</div>
+        <div class="tbl"><table><tr><th></th>${D.goals.map((g) => `<th>${esc(g.key)}</th>`).join("")}</tr>${rows}</table></div>
+        <p class="note">練習の記録：${t.practice}件　<a href="${t.url}" target="_blank" rel="noopener">スプレッドシートを開く</a></p>`;
+    })
+    .catch((e) => { box.innerHTML = `<p class="note">全レーンの集計を読み込めませんでした（${esc(e.message)}）。この端末の集計は下にあります。</p>`; });
+};
+setSync();
+flush();
+render();
+</script>
+
+</body>
+</html>
